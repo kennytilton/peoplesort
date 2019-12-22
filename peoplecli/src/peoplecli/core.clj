@@ -5,28 +5,18 @@
             [clojure.string :as str]
             [clojure.pprint :as pp]
             [clj-time.core :as tm]
-            [clj-time.format :as tfm])
+            [clj-time.format :as tfm]
+            [clj-time.coerce :as tc])
   (:gen-class))
 
 (def people-cli
-
-  [["-s" "--sort SORTBY" "Sort by, default by last name."
-    :default "n"
-    ;; :parse-fn #(Integer/parseInt %)
-    :validate [#(str/includes? "nNgGbB" %) "Sort code must be (case insensitively): 'n' for last name, 'g' for gender, or 'b' for birth date."]]
-
-   ["-o" "--order ORDER" "[A]scending or [D]escending order."
-    :default 80
-    ;;:parse-fn #(Integer/parseInt %)
-    :validate [#(str/includes? "aAdD" %) "Must be A or D, case-insensitive, for ascending or descending sort."]]
-
-   ;; A boolean option defaulting to nil
-   ["-h" "--help"]]
+  [["-h" "--help"]]
   )
 
 (declare header-parse file-found?
   people-file-ingest people-file-validate
-  dob-parse dob-display)
+  dob-parse dob-display
+  process-inputs)
 
 #_(-main "-sG" "resources/pipes.csv")
 
@@ -61,38 +51,76 @@
     ;; WARNING: comment this out for use with REPL
     #_(shutdown-agents)))
 
+#_(-main "resources/pipes.csv" "resources/commas.csv")
+
+(defn comp-females-first-then-last-asc
+  "a compare function sorting females first then by
+   ascending last name, case-insensitively"
+  [[l1 _ g1 _ _] [l2 _ g2 _ _]]
+  (let [out
+        (cond
+          (= g1 "female") (or (= g2 "male")
+                            ;; both female, use last
+                            (compare (str/lower-case l1) (str/lower-case l2)))
+          :default
+          ;; g1 is male
+          (cond
+            (= g2 "female") false
+            ;; both male, use last
+            :default (compare (str/lower-case l2) (str/lower-case l1))))]
+
+    out))
+
+(defn comp-last-dsc
+  [[l1 _ _ _ _] [l2 _ _ _ _]]
+  (compare (str/lower-case l2) (str/lower-case l1)))
+
+(defn comp-dob-asc
+  [[_ _ _ _ dob1] [_ _ _ _ dob2]]
+  (tm/before? dob1 dob2))
+
+#_(-main "resources/pipes.csv" "resources/commas.csv")
+
 (defn process-inputs [sortby order input-files]
   (let [header-parses (map people-file-validate input-files)
         col-ingestors [nil nil nil nil dob-parse]
         col-displayers [nil nil nil nil dob-display]]
     (when (every? seq header-parses)
-      (let [parsed-rows (mapcat (partial people-file-ingest col-ingestors)
-                          input-files
-                          header-parses)
-            sorted-rows (sort )
-            ordered-rows ((if (some #{order} "aB")
-                            identity reverse)
-                          sorted-rows)]
-        (doseq [row-values ordered-rows]
-          (let [[last first gender color dob]
-                (map (fn [row-val displayer]
-                       (try
-                         ((or displayer identity) row-val)
-                         (catch Exception e
-                           "#####")))
-                  row-values col-displayers)]
-            (pp/cl-format true "~&~20a ~20a ~10a ~20a ~10a~%"
-              last first gender color dob)))))))
-
-#_(-main "-oD" "-sg" "resources/pipes.csv" #_"resources/commas.csv")
+      (let [parsed-rows (distinct
+                          (mapcat (partial people-file-ingest col-ingestors)
+                            input-files
+                            header-parses))]
+        (doseq [[title comparator]
+                [["By Gender and Last Name" comp-females-first-then-last-asc]
+                 ["By DOB" comp-dob-asc]
+                 ["By Descending Last Name" comp-last-dsc]]]
+          (pp/cl-format true "~&~%~%~a~%------------------------~%" title)
+          (pp/cl-format true "~&~20a ~20a ~10a ~20a ~10a~%"
+            "First" "Last" "Gender" "Favorite Color" "DOB")
+          (doseq [row-values (sort comparator parsed-rows)]
+            (let [[last first gender color dob]
+                  (map (fn [row-val displayer]
+                         (try
+                           ((or displayer identity) row-val)
+                           (catch Exception e
+                             "#####")))
+                    row-values col-displayers)]
+              (pp/cl-format true "~&~20a ~20a ~10a ~20a ~10a~%"
+                first last gender color dob))))))))
 
 (defn dob-parse [dob-in]
   "Convert from YYYY-mm-dd to Date object"
   (tfm/parse (tfm/formatter "yyyy-MM-dd") dob-in))
 
+#_(distinct [["a" (dob-parse "2019-11-23")] ["a" 4 (dob-parse "2019-11-2")]])
+#_(> (dob-parse "2019-12-23")
+    (dob-parse "2018-01-01"))
+
 #_(dob-display (dob-parse "2019-11-23"))
 
-#_(tm/after? (dob-parse "2019-11-23") (dob-parse "2019-10-23"))
+#_(sort-by tc/to-long > [(dob-parse "2019-11-23")
+                         (dob-parse "2019-9-23")
+                         (dob-parse "2019-10-23")])
 
 (defn dob-display [dob]
   "Convert Date object to mm/dd/YYYY"
