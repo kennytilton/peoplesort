@@ -3,7 +3,10 @@
             [clojure.string :as str]
             [clj-time.format :as tfm]
             [clojure.java.io :as io]
-            [clojure.set :as set]))
+            [clojure.set :as set]
+            [peoplecli.reporter :as rpt]))
+
+(declare people-props-reqd)
 
 (defn file-found? [path]
   (or (.exists (io/as-file path))
@@ -14,13 +17,17 @@
   "Convert from YYYY-mm-dd to Date object"
   (tfm/parse (tfm/formatter "yyyy-MM-dd") dob-in))
 
+(defn dob-display [dob]
+  "Convert Date object to mm/dd/YYYY"
+  (tfm/unparse (tfm/formatter "MM/dd/yyyy") dob))
+
 (defn header-parse
-  [allowed-delims prop-specs header-string]
+  [allowed-delims col-specs header-string]
   (some #(let [col-delim (re-pattern (str "\\" %))
                col-headers (mapv (comp keyword str/trim)
                              (str/split header-string col-delim))
                headers-missing (set/difference
-                                 (set (map :name prop-specs))
+                                 (set (keys col-specs))
                                  (set col-headers))]
            (when (and (empty? headers-missing)
                    ;; now that we support excess columns, testing the space
@@ -33,65 +40,80 @@
               :col-headers col-headers}))
     allowed-delims))
 
-(defn people-file-validate [prop-specs filepath]
+#_(people-input-analyze people-props-reqd "resources/spaces.csv")
+
+(defn people-input-analyze [col-specs filepath]
   (with-open [rdr (io/reader filepath)]
-    (when-let [header-def (header-parse "|, " prop-specs (first (line-seq rdr)))]
+    (when-let [header-def (header-parse "|, " col-specs (first (line-seq rdr)))]
       (prn :hdef header-def)
       (merge header-def {:filepath   filepath
-                         :prop-specs prop-specs}))))
+                         :col-specs col-specs}))))
 
-#_(people-file-validate {:name :first}
-                         {:name :last}
-                         {:name :gender}
-                         {:name :color}
-                         {:name   :dob
-                          :parser dob-parse}]
-    "resources/spaces.csv")
+(def people-col-order [:last :first :dob :gender :color])
 
-#_ (people-file-ingest
-     (people-file-validate [{:name :first}
-                            {:name :last}
-                            {:name :gender}
-                            {:name :color}
-                            {:name   :dob
-                             :parser dob-parse}]
-       "resources/pipes.csv"))
-(defn people-file-ingest [{:keys [filepath col-delim prop-specs col-headers]
+(defn people-file-ingest [{:keys [filepath col-delim col-specs col-headers]
                            :as   input-spec}]
-  (prn :pfi-specs prop-specs)
   (with-open [rdr (io/reader filepath)]
     (into []                                                ;; trick to realize all before closinr reader
       (map-indexed (fn [row-no row]
-                     ;(prn :mapi row-no row)
                      (let [col-values (map str/trim (str/split row col-delim))]
-                       ;(prn :rpa row-no cols)
                        (when (< (count col-values) (count col-headers))
                          (throw (Exception. (str "Insufficient column count " (count col-values)
                                               " at row " (inc row-no)
                                               " in file " filepath))))
-                       (into []
-                         (map (fn [col-value col-header]
-                                (let [col-spec (col-header prop-specs)]
-                                  ;(prn :hdr col-value col-header col-spec)
-                                  (when-let [p (:parser col-spec)]
-                                    (prn :p p))
+                       (let [col-values (zipmap col-headers col-values)]
+                         ;; parse each value while also standardizing column order
+                         ;; which we now allow to vary in input files
+                         (map (fn [col-header]
+                                (let [col-spec (col-header col-specs)]
+                                  (prn :hdr  col-header col-spec (col-header col-values))
                                   (try
-                                    (or (:parser col-spec) col-value)
+                                    ((or (:parser col-spec) identity)
+                                     (col-header col-values))
                                     (catch Exception e
                                       "#####"))))
-                           col-values col-headers))))
-        (line-seq rdr)))))
+                           people-col-order))))
+        (rest (line-seq rdr))))))
+
+#_(people-file-ingest
+    (people-input-analyze
+      people-props-reqd
+      "resources/spaces.csv"))
+
+(def people-props-reqd
+  {:first  {:label "Given name"
+            :format-field "~20a"}
+   :last   {:label "Surname":format-field "~20a"}
+   :gender {:label "Gender"
+            :format-field "~10a"
+            :parser       (fn [g]
+                            (or (some #{g} ["male" "female"])
+                              (throw (Exception. (str "Invalid gender: " g)))))}
+   :color  {:label "Favorite color"
+            :format-field "~15a"}
+   :dob    {:label "Born"
+            :format-field "~16a"
+            :parser       dob-parse
+            :formatter    dob-display}})
+
+#_ (process-inputs ["resources/spaces.csv"] #(pp/pprint %2))
+#_ (process-inputs ["resources/spaces.csv"] rpt/people-report)
 
 (defn process-inputs
-  ([input-files props-reqd]
-   (process-inputs input-files props-reqd nil))
+  ([input-files]
+   (process-inputs input-files nil))
 
-  ([input-files props-reqd reporter]
-   (let [input-specs (map #(people-file-validate props-reqd %) input-files)]
+  ([input-files reporter]
+   (let [input-specs (map #(people-input-analyze people-props-reqd %) input-files)]
      (when-not (some nil? input-specs)
        (let [parsed-rows (distinct
-                           ;; ^^^ seems right
+                           ;; ^^^ seems right behavior to de-dupe
                            (mapcat people-file-ingest input-specs))]
+         (prn :parsed parsed-rows)
          (when reporter
-           (reporter parsed-rows)))))))
-
+           ;; parsed rows have values ordered as required, now
+           ;; pull each col spec into a vector in the same order
+           ;; and feed reporter data in efficient form
+           (reporter
+             (map #(% people-props-reqd) people-col-order)
+             parsed-rows)))))))

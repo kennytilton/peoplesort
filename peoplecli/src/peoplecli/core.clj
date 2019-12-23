@@ -15,16 +15,6 @@
 (def people-cli
   [["-h" "--help"]])
 
-(def people-props-reqd
-  [{:name :first}
-   {:name :last}
-   {:name :gender
-    :parser #(some #{%} ["male" "female"])}
-   {:name :color}
-   {:name      :dob
-    :parser    ing/dob-parse
-    :formatter rpt/dob-display}])
-
 #_(-main "resources/commas.csv")
 
 (defn -main [& args]
@@ -53,9 +43,8 @@
       :default
       (ing/process-inputs
         filepaths
-        people-props-reqd
-        #_ rpt/people-report
-        pp/print)
+        rpt/people-report
+        #_ (fn [_ data] (pp/pprint data)))
 
       ;; WARNING: comment this out for use with REPL
       #_(shutdown-agents))))
