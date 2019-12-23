@@ -9,7 +9,7 @@
                  [org.clojure/tools.cli "0.3.5"]
                  [clj-time "0.15.2"]]
   :main ^:skip-aot peoplecli.core
-  :target-path "target/%s"
-  :bin {:name "peoplecli"
+  :target-path "target"
+  :bin {:name "peoplesort"
         :bin-path "./bin"}
   :profiles {:uberjar {:aot :all}})

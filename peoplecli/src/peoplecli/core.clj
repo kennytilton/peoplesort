@@ -7,7 +7,6 @@
             [clj-time.core :as tm]
             [clj-time.format :as tfm]
             [clj-time.coerce :as tc]
-
             [peoplecli.ingester :as ing]
             [peoplecli.reporter :as rpt])
   (:gen-class))
@@ -15,7 +14,12 @@
 (def people-cli
   [["-h" "--help"]])
 
-#_(-main "resources/commas.csv")
+#_ (-main "-h")
+
+#_(-main "resources/commas.csv"
+    "resources/pipes.csv"
+    "resources/spaces.csv"
+    )
 
 (defn -main [& args]
   #_;; uncomment during development so errors get through when async in play
@@ -33,8 +37,9 @@
       errors (doseq [e errors]
                (println e))
 
-      help (println "\nUsage:\n\n    peoplesort options* files*\n\n"
-             "Options:\n" (subs summary 1))
+      help (println "\nUsage:\n    peoplesort options* files*\n\n"
+             "Options:\n" (subs summary 1)
+             "\n")
 
       (empty? filepaths) (println "\nNo data files provideed. Exiting.\n\n")
 

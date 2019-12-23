@@ -19,7 +19,9 @@
 
 (defn dob-display [dob]
   "Convert Date object to mm/dd/YYYY"
-  (tfm/unparse (tfm/formatter "MM/dd/yyyy") dob))
+  (case dob
+    :error "#####"
+    (tfm/unparse (tfm/formatter "MM/dd/yyyy") dob)))
 
 (defn header-parse
   [allowed-delims col-specs header-string]
@@ -32,7 +34,8 @@
            (when (and (empty? headers-missing)
                    ;; now that we support excess columns, testing the space
                    ;; as a delimiter can be a mess if the header contains
-                   ;; multiple spaces or an unsupported delimiter such as #.
+                   ;; multiple spaces or an unsupported delimiter such as #, so
+                   ;; here we guard against nonsense headers that would arise.
                    (every? (fn [hdr] (re-matches #"[a-zA-Z0-9-_\.]+"
                                        (name hdr)))
                      col-headers))
@@ -45,7 +48,7 @@
 (defn people-input-analyze [col-specs filepath]
   (with-open [rdr (io/reader filepath)]
     (when-let [header-def (header-parse "|, " col-specs (first (line-seq rdr)))]
-      (prn :hdef header-def)
+      ;(prn :hdef header-def)
       (merge header-def {:filepath   filepath
                          :col-specs col-specs}))))
 
@@ -66,12 +69,14 @@
                          ;; which we now allow to vary in input files
                          (map (fn [col-header]
                                 (let [col-spec (col-header col-specs)]
-                                  (prn :hdr  col-header col-spec (col-header col-values))
+                                  ;(prn :hdr  col-header col-spec (col-header col-values))
                                   (try
                                     ((or (:parser col-spec) identity)
                                      (col-header col-values))
                                     (catch Exception e
-                                      "#####"))))
+                                      ;; col formatters are responsible
+                                      ;; for rendering these
+                                      :error))))
                            people-col-order))))
         (rest (line-seq rdr))))))
 
@@ -86,6 +91,7 @@
    :last   {:label "Surname":format-field "~20a"}
    :gender {:label "Gender"
             :format-field "~10a"
+            :formatter #(case % :error "#####" %)
             :parser       (fn [g]
                             (or (some #{g} ["male" "female"])
                               (throw (Exception. (str "Invalid gender: " g)))))}
