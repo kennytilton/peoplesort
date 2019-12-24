@@ -3,23 +3,26 @@
             [ring.mock.request :as mock]
             [peoplesort.handler :refer [app]]))
 
-(defn appget
+(defn rqget
   ([ept]
-   (appget ept nil))
+   (rqget ept nil))
   ([ept query]
    (app
      (mock/request :get
        ept query))))
 
-(defn apppost
+(defn rqpost
   ([ept]
-   (appget ept nil))
+   (rqpost ept nil))
   ([ept body]
-   (apppost
+   (app
      (mock/request :post
        ept body))))
 
 (defn postperson [raw]
-  (apppost "/records" {:raw raw}))
+  (rqpost "/records" {:raw raw}))
+
+(defn postpersons [& persons]
+  (rqpost "/records/bulk" {:persons persons}))
 
 

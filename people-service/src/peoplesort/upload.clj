@@ -2,57 +2,73 @@
   (:require [clojure.set :as set]
             [clojure.string :as str]
             [clojure.data.json :as json]
-            [ring.util.response :refer [response]]
-            [peoplesort.utility
-             :refer [people-store
-                     CORS-HEADERS
-                     build-resp
-                     usage-error]]))
+    ;;[ring.util.response :refer [response]]
+            [peoplesort.utility :refer [pprt] :as util]
+            [peoplesort.http :as http]
+            [peoplesort.persistence :as ps]))
 
-(defn people-reset
-  "Think of this as uploading the empty set"
+(def SUPPORTED-DELIMS [#"\|" #"," #" "])
+
+(defn person-csv-parse
+  [input-row]
+  (some (fn [col-delim]
+          (try
+            (let [col-values (mapv str/trim
+                               (str/split input-row col-delim))]
+              (when (= (count col-values)
+                      (count util/people-props-reqd))
+                (prn :count-ok! col-values)
+                {:success true
+                 ;; next we impose the required ordering of the columns; an
+                 ;; alternative would be for the API to accept an initial
+                 ;; row of colun labels, just as in a CSV
+                 :record  (into {}
+                            (map (fn [val spec]
+                                   [(:name spec)
+                                    ((or (:parser spec) identity) val)])
+                              col-values util/people-props-reqd))}))
+            (catch Exception e
+              (prn :xxx e)
+              nil)))
+    SUPPORTED-DELIMS))
+
+#_ (person-csv-parse "1 | 2 | male | 4 | 2019-12-24")
+
+(defn people-reset!
   [req]
-  (try
+  (http/without-exception
     (do
-      (reset! people-store nil)
-      ;; take honest count!
-      (build-resp 200 {:new-count (count @people-store)}))
-    (catch Exception e
-      (build-resp 500 {:appfail "unknown"}))))
+      (ps/store-reset!)
+      ;; return honest count...
+      (http/respond-ok {:new-count (ps/record-count)}))))
 
 (defn person-add-one [req]
-  (try
+  (prn :add-one req)
+  (http/without-exception
     (let [{:keys [raw]} (:params req)]
+      (prn :addraw raw)
       (cond
         (some str/blank? [raw])
-        (usage-error 402 "Person data blank. Ignored.")
+        (http/respond-data-error "Person data blank.")
 
         :default
-        (build-resp 200 {:new-count
-                         (count
-                           (swap! people-store conj raw))})))
-
-    ;; todo log/report error usefully
-    (catch Exception e
-      {:status  500
-       :headers (merge CORS-HEADERS
-                  {"Content-Type" "text/html"})
-       :body    "Add person failed."})))
+        (let [parse (person-csv-parse raw)]
+          (pprt :parse parse)
+          (if (:success parse)
+            (do
+              (ps/write! (:record parse))
+              (http/respond-ok {:new-count (ps/record-count)}))
+            (http/respond-data-error (:error parse))))))))
 
 (defn person-add-bulk [req]
-  (try
-    (let [{:keys [persons]} (:params req)]
+  (http/without-exception
+    (let [{:keys [persons]} (:params req)
+          parses (map person-csv-parse persons)]
       (cond
-        (some str/blank? [persons])
-        (usage-error 402 "Person data blank. Ignored.")
+        (every? seq parses)
+        (do (ps/write-bulk! (map :record parses))
+            (http/respond-ok {:new-count (ps/record-count)}))
 
         :default
-        (build-resp 200 {:new-count
-                         (count
-                           (swap! people-store concat persons))})))
-
-    (catch Exception e
-      {:status  500
-       :headers (merge CORS-HEADERS
-                  {"Content-Type" "text/html"})
-       :body    "Add person failed."})))
+        (http/respond-data-error (str/join "\n"
+                                   (map :reason (remove seq parses))))))))

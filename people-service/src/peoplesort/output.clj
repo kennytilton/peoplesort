@@ -1,29 +1,42 @@
 (ns peoplesort.output
-  (:require [clojure.set :as set]
-            [clojure.string :as str]
-            [clojure.data.json :as json]
-            [ring.util.response :refer [response]]
-            [peoplesort.utility
-             :refer [people-store
-                     CORS-HEADERS
-                     build-resp
-                     usage-error]]))
+  (:require [peoplesort.persistence :as ps]
+            [peoplesort.http :as http :refer :all]
+            [peoplesort.utility :as util]))
+
+
+(defn external-format
+  "Return a record still as a map but with internal values
+   such as dates converted back to external format."
+  [record]
+  (into {}
+    (map (fn [spec]
+         [(:name spec)
+          ((or (:formatter spec) identity) (get record (:name spec)))])
+      util/people-props-reqd)))
 
 (defn people-count [req]
-  (try
-    (build-resp 200 {:count (count @people-store)})
-    (catch Exception e
-      {:status  500
-       :headers (merge CORS-HEADERS
-                  {"Content-Type" "text/html"})
-       :body    "<h1>Something 500 happened.</h1>"})))
+  (without-exception
+    (respond-ok {:count (ps/record-count)})))
+
+(defn stored-persons-ordered-by [req]
+  (without-exception
+    (let [{:keys [orderby]} (:params req)]
+      (prn :order-by! orderby)
+      (respond-ok
+        (ps/order-by (ps/contents) orderby)))))
 
 (defn stored-persons-by-dob [req]
-  (try
-    (build-resp 200
-      @people-store)
-    (catch Exception e
-      {:status  500
-       :headers (merge CORS-HEADERS
-                  {"Content-Type" "text/html"})
-       :body    "Retrieve persons by name failed."})))
+  (without-exception
+    (respond-ok
+      (ps/order-by (ps/contents) [{:dob :asc}]))))
+
+(defn stored-persons-by-name [req]
+  (without-exception
+    (respond-ok
+      (map external-format
+        (ps/order-by (ps/contents) [{:last :asc} {:first :asc}])))))
+
+(defn stored-persons-by-gender [req]
+  (without-exception
+    (respond-ok
+      (ps/order-by (ps/contents) [{:gender :asc}]))))

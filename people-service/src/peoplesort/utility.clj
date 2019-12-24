@@ -1,51 +1,34 @@
 (ns peoplesort.utility
   (:require
     [clojure.data.json :as json]
-    [clojure.pprint :as pp]))
-
-(def unsecure-site-defaults
-  {:params    {:urlencoded true
-               :multipart  true
-               :nested     true
-               :keywordize true}
-   :cookies   true
-   :session   {:flash true
-               :cookie-attrs {:http-only true}}
-   :security  {:anti-forgery   false ;; true
-               :xss-protection nil ;; {:enable? true, :mode :block}
-               :frame-options  nil ;;:sameorigin
-               :content-type-options :nosniff}
-   :static    {:resources "public"}
-   :responses {:not-modified-responses true
-               :absolute-redirects     true
-               :content-types          true
-               :default-charset        "utf-8"}})
-
-(def Response-OK 200)
-(def Unprocessable-Entity 422)
-(def Not-Found 404)
+    [clojure.pprint :as pp]
+    [clj-time.format :as tfm]))
 
 (defn pprt
   ([x] (pprt :anon x))
   ([tag x] (pp/pprint [tag x])))
 
-(defn body->map [response]
-  (json/read-str (:body response) :key-fn keyword))
+(defn dob-parse
+  "Convert from YYYY-mm-dd to Date object"
+  [dob-in]
+  (tfm/parse (tfm/formatter "yyyy-MM-dd") dob-in))
 
-(def CORS-HEADERS {"Content-Type"                 "application/json"
-                   "Access-Control-Allow-Headers" "Content-Type"
-                   "Access-Control-Allow-Origin"  "*"})
+(defn dob-display
+  "Convert Date object to mm/dd/YYYY. Keyword :error signifies
+  data already determined to be invalid"
+  [dob]
+  (case dob
+    :error "#####"
+    (tfm/unparse (tfm/formatter "MM/dd/yyyy") dob)))
 
-(defn build-resp [status body-ext]
-  {:status  status
-   :headers CORS-HEADERS
-   :body    body-ext})
-
-(defn usage-error
-  ([status msg]
-   (usage-error status msg nil))
-  ([status msg x-info]
-   (build-resp status (merge x-info
-                        {:usageError msg}))))
-
-(def people-store (atom nil))
+(def people-props-reqd
+  [{:name :LastName}
+   {:name :FirstName}
+   {:name :Gender
+    :parser (fn [g]
+              (or (some #{g} ["male" "female"])
+                (throw (Exception. (str "Invalid gender: " g)))))}
+   {:name :FavoriteColor}
+   {:name :DateOfBirth
+    :parser    dob-parse
+    :formatter dob-display}])
