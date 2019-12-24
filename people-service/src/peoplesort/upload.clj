@@ -3,7 +3,7 @@
             [clojure.string :as str]
             [clojure.data.json :as json]
     ;;[ring.util.response :refer [response]]
-            [peoplesort.utility :refer [pprt] :as util]
+            [peoplesort.base :refer :all]
             [peoplesort.http :as http]
             [peoplesort.persistence :as ps]))
 
@@ -16,7 +16,7 @@
             (let [col-values (mapv str/trim
                                (str/split input-row col-delim))]
               (when (= (count col-values)
-                      (count util/people-props-reqd))
+                      (count people-props-reqd))
                 (prn :count-ok! col-values)
                 {:success true
                  ;; next we impose the required ordering of the columns; an
@@ -26,7 +26,7 @@
                             (map (fn [val spec]
                                    [(:name spec)
                                     ((or (:parser spec) identity) val)])
-                              col-values util/people-props-reqd))}))
+                              col-values people-props-reqd))}))
             (catch Exception e
               (prn :xxx e)
               nil)))

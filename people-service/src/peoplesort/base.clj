@@ -1,4 +1,4 @@
-(ns peoplesort.utility
+(ns peoplesort.base
   (:require
     [clojure.data.json :as json]
     [clojure.pprint :as pp]

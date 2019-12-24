@@ -1,8 +1,7 @@
 (ns peoplesort.output
   (:require [peoplesort.persistence :as ps]
             [peoplesort.http :as http :refer :all]
-            [peoplesort.utility :as util]))
-
+            [peoplesort.base :refer [people-props-reqd]]))
 
 (defn external-format
   "Return a record still as a map but with internal values
@@ -12,7 +11,7 @@
     (map (fn [spec]
          [(:name spec)
           ((or (:formatter spec) identity) (get record (:name spec)))])
-      util/people-props-reqd)))
+      people-props-reqd)))
 
 (defn people-count [req]
   (without-exception

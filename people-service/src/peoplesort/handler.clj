@@ -2,12 +2,10 @@
   (:require [compojure.core :refer :all]
             [compojure.handler :as handler]
             [compojure.route :as route]
-            [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
+            [ring.middleware.defaults :refer [wrap-defaults]]
             [ring.middleware.json :refer [wrap-json-response]]
-            [peoplesort.utility :as util]
             [peoplesort.upload :as upl]
             [peoplesort.output :as out]
-            [peoplesort.persistence :as ps]
             [peoplesort.http :as http]))
 
 ; Our spec:

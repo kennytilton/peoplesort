@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [ring.mock.request :as mock]
             [peoplesort.handler :refer [app]]
-            [peoplesort.utility :refer :all]
+            [peoplesort.base :refer :all]
             [peoplesort.http :refer :all]
             [peoplesort.upload :as up]
             [peoplesort.test-utility :as util]))
