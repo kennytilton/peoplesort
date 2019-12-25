@@ -17,7 +17,6 @@
                                (str/split input-row col-delim))]
               (when (= (count col-values)
                       (count people-props-reqd))
-                (prn :count-ok! col-values)
                 {:success true
                  ;; next we impose the required ordering of the columns; an
                  ;; alternative would be for the API to accept an initial
@@ -43,17 +42,14 @@
       (http/respond-ok {:new-count (ps/record-count)}))))
 
 (defn person-add-one [req]
-  (prn :add-one req)
   (http/without-exception
     (let [{:keys [raw]} (:params req)]
-      (prn :addraw raw)
       (cond
         (some str/blank? [raw])
         (http/respond-data-error "Person data blank.")
 
         :default
         (let [parse (person-csv-parse raw)]
-          (pprt :parse parse)
           (if (:success parse)
             (do
               (ps/write! (:record parse))

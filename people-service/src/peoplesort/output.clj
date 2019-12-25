@@ -9,13 +9,20 @@
   [record]
   (into {}
     (map (fn [spec]
-         [(:name spec)
-          ((or (:formatter spec) identity) (get record (:name spec)))])
+           [(:name spec)
+            ((or (:formatter spec) identity) (get record (:name spec)))])
       people-props-reqd)))
 
 (defn people-count [req]
   (without-exception
     (respond-ok {:count (ps/record-count)})))
+
+;; todo DRY these
+(defn stored-persons [& order-specs]
+  (without-exception
+    (respond-ok
+      (map external-format
+        (apply ps/order-by (ps/contents)order-specs)))))
 
 (defn stored-persons-ordered-by [req]
   (without-exception
@@ -25,17 +32,10 @@
         (ps/order-by (ps/contents) orderby)))))
 
 (defn stored-persons-by-dob [req]
-  (without-exception
-    (respond-ok
-      (ps/order-by (ps/contents) [{:dob :asc}]))))
+  (stored-persons [:DateOfBirth :asc]))
 
 (defn stored-persons-by-name [req]
-  (without-exception
-    (respond-ok
-      (map external-format
-        (ps/order-by (ps/contents) [{:last :asc} {:first :asc}])))))
+  (stored-persons [:LastName :asc] [:FirstName :asc]))
 
 (defn stored-persons-by-gender [req]
-  (without-exception
-    (respond-ok
-      (ps/order-by (ps/contents) [{:gender :asc}]))))
+  (stored-persons [:Gender :asc]))
