@@ -1,6 +1,8 @@
 (ns peoplesort.output
-  (:require [peoplesort.persistence :as ps]
+  (:require [clojure.data.json :as json]
+            [peoplesort.persistence :as ps]
             [peoplesort.http :as http :refer :all]
+            [peoplesort.sorting :refer :all]
             [peoplesort.base :refer [people-props-reqd]]))
 
 (defn external-format
@@ -22,14 +24,15 @@
   (without-exception
     (respond-ok
       (map external-format
-        (apply ps/order-by (ps/contents)order-specs)))))
+        (apply ps/order-by (ps/contents) order-specs)))))
 
 (defn stored-persons-ordered-by [req]
   (without-exception
-    (let [{:keys [orderby]} (:params req)]
-      (prn :order-by! orderby)
-      (respond-ok
-        (ps/order-by (ps/contents) orderby)))))
+    (let [{:keys [sortkeys]} (:params req)
+          kwd-sortkeys (mapv #(mapv keyword %) (json/read-str sortkeys))]
+      (respond-ok (map external-format
+                    (apply ps/order-by (ps/contents)
+                      kwd-sortkeys))))))
 
 (defn stored-persons-by-dob [req]
   (stored-persons [:DateOfBirth :asc]))

@@ -3,7 +3,8 @@
     [clojure.test :refer :all]
     [peoplesort.sorting :refer :all]
     [peoplesort.http :refer :all]
-    [peoplesort.test-utility :as util]))
+    [peoplesort.test-utility :as util]
+    [clojure.data.json :as json]))
 
 (deftest basic-sort
   (testing "numeric sorts"
@@ -41,3 +42,34 @@
              ["Turner" "Bachman"]
              ["Turner" "Ted"]
              ["Turner" "Tina"]])))))
+
+(deftest nested-custom-sort
+  (testing "Nested sort, last name then first"
+    (let [response (util/rqpost "/records/reset")]
+      (is (= (:status response) Response-OK)))
+
+    (doseq [person ["Smith | Bob | male | green | 2011-08-23"
+                    ;; "BeebleBrox Zaphod male gold 2098-1-19"
+                    "Lama, Dalai, male, saffron, 1935-7-6"
+                    "Turner | Tina | female | saphireBlue | 1939-11-26"
+                    ;;"Turner Bachman male various 1973-06-30"
+                    #_ "Turner | Ted | male | gray | 1938-11-19"]]
+      (let [response (util/postperson person)]
+        (is (= (:status response) Response-OK))))
+
+    (let [response (util/rqget "/records/orderedby"
+                     {:sortkeys (json/write-str
+                                  [[:Gender :asc] [:LastName :dsc]])})]
+      (prn :sorting-resp response)
+      (is (= (:status response) Response-OK))
+      (prn :names (response-body->map response))
+
+      (is (= (map (juxt :LastName :FirstName) (response-body->map response))
+            [["Turner" "Tina"]
+             ["Smith" "Bob"]
+             ;;["BeebleBrox" "Zaphod"]
+             ["Lama" "Dalai"]
+
+             ;;["Turner" "Bachman"]
+             ;;["Turner" "Ted"]
+             ])))))

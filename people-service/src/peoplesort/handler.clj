@@ -30,7 +30,7 @@
       (out/stored-persons-by-name req))
     (GET "/birthdate" req
       (out/stored-persons-by-dob req))
-    (GET "/orderby" req
+    (GET "/orderedby" req
       (out/stored-persons-ordered-by req)))
   (route/not-found "Invalid route toplevel."))
 

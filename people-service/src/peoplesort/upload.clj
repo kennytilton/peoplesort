@@ -31,8 +31,6 @@
               nil)))
     SUPPORTED-DELIMS))
 
-#_ (person-csv-parse "1 | 2 | male | 4 | 2019-12-24")
-
 (defn people-reset!
   [req]
   (http/without-exception
