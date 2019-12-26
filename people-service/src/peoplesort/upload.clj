@@ -10,59 +10,64 @@
 (def SUPPORTED-DELIMS [#"\|" #"," #" "])
 
 (defn person-csv-parse
+  "Try each supported delimiter looking for one that splits the input row
+  into the right number of properties which, after trimming, pass the
+  parsing if any specified for each property.
+
+  Interestingly, it is hard to provide detailed errors because a given string
+  might split to the right count on an unintended delimiter, and then exceptions
+  will arise left and right. Think C++ failed compile."
   [input-row]
-  (some (fn [col-delim]
-          (try
-            (let [col-values (mapv str/trim
-                               (str/split input-row col-delim))]
-              (when (= (count col-values)
-                      (count people-props-reqd))
-                {:success true
-                 ;; next we impose the required ordering of the columns; an
-                 ;; alternative would be for the API to accept an initial
-                 ;; row of colun labels, just as in a CSV
-                 :record  (into {}
-                            (map (fn [val spec]
-                                   [(:name spec)
-                                    ((or (:parser spec) identity) val)])
-                              col-values people-props-reqd))}))
-            (catch Exception e
-              (prn :xxx e)
-              nil)))
-    SUPPORTED-DELIMS))
+  (letfn [(try-delim [col-delim]
+            (try
+              (let [col-values (mapv str/trim
+                                 (str/split input-row col-delim))]
+                (when (= (count col-values) (count person-properties))
+                  {:success true
+                   :record  (into {}
+                              ;; optimistically parse each value. Parsers
+                              ;; throw exceptions when unhappy.
+                              (map (fn [val spec]
+                                     [(:name spec)
+                                      ((or (:parser spec) identity) val)])
+                                col-values person-properties))}))
+              (catch Exception e nil)))]
+    (or (some try-delim SUPPORTED-DELIMS)
+      {:success false
+       :reason  (str "Error parsing: " input-row)})))
 
 (defn people-reset!
   [req]
-  (http/without-exception
+  (http/with-exception-trap
     (do
       (ps/store-reset!)
-      ;; return honest count...
+      ;; return honest count instead of assuming it is zero
       (http/respond-ok {:new-count (ps/record-count)}))))
 
 (defn person-add-one [req]
-  (http/without-exception
-    (let [{:keys [raw]} (:params req)]
+  (http/with-exception-trap
+    (let [{:keys [person]} (:params req)]
       (cond
-        (some str/blank? [raw])
+        (str/blank? person)
         (http/respond-data-error "Person data blank.")
 
         :default
-        (let [parse (person-csv-parse raw)]
+        (let [parse (person-csv-parse person)]
           (if (:success parse)
             (do
               (ps/write! (:record parse))
               (http/respond-ok {:new-count (ps/record-count)}))
-            (http/respond-data-error (:error parse))))))))
+            (http/respond-data-error (:reason parse))))))))
 
 (defn person-add-bulk [req]
-  (http/without-exception
+  (http/with-exception-trap
     (let [{:keys [persons]} (:params req)
           parses (map person-csv-parse persons)]
       (cond
-        (every? seq parses)
+        (every? :success parses)
         (do (ps/write-bulk! (map :record parses))
             (http/respond-ok {:new-count (ps/record-count)}))
 
         :default
         (http/respond-data-error (str/join "\n"
-                                   (map :reason (remove seq parses))))))))
+                                   (map :reason (remove :success parses))))))))

@@ -7,6 +7,30 @@
             [peoplesort.upload :as up]
             [peoplesort.test-utility :as util]))
 
+(deftest unhappy-paths
+  ;; OK, one non-happy test...
+  (testing "Bad delimiter"
+    (let [response (util/postperson
+                     "Turner # Tina | female | saphireBlue | 1939-11-26")]
+      (is (= (:status response) Unprocessable-Entity))))
+  (testing "Bad column counts"
+    (let [response (util/postperson
+                     "Turner Tina | female | saphireBlue | 1939-11-26")]
+      (is (= (:status response) Unprocessable-Entity)))
+    (let [response (util/postperson
+                     "Turner | Tina | female | saphire | Blue | 1939-11-26")]
+      (is (= (:status response) Unprocessable-Entity))))
+  (testing "Bad column values, date and gender"
+    (let [response (util/postperson
+                     "Turner Tina | female | saphireBlue | 1939-13-26")]
+      (is (= (:status response) Unprocessable-Entity)))
+    (let [response (util/postperson
+                     "Turner Tina | female | saphireBlue | 1939-11-46")]
+      (is (= (:status response) Unprocessable-Entity)))
+    (let [response (util/postperson
+                     "Turner | Tina | woman | saphire | Blue | 1939-11-26")]
+      (is (= (:status response) Unprocessable-Entity)))))
+
 (deftest happy-path-store-and-retrieve
   (testing "simple add and retrieve new record, then add more, then reset"
     (let [response (util/rqpost "/records/reset")]
@@ -20,10 +44,10 @@
     (let [response (util/rqget "/records/name")]
       (is (= (:status response) Response-OK))
       (is (= (response-body->map response)
-            [{:LastName "Smith", :FirstName "Bob", :Gender "male",
+            [{:LastName      "Smith", :FirstName "Bob", :Gender "male",
               :FavoriteColor "green",
-              :DateOfBirth "08/23/2011"}])))
-    (let [response (util/postperson "BeebleBrox Zaphod male gold 2098-1-19")]
+              :DateOfBirth   "08/23/2011"}])))
+    (let [response (util/postperson "BeebleBrox Zaphodra male gold 2098-1-19")]
       (is (= (:status response) Response-OK))
       (is (= (response-body->map response)
             {:new-count 2})))
@@ -33,11 +57,6 @@
       (is (= (:status response) Response-OK))
       (is (= (response-body->map response)
             {:new-count 4})))
-
-    ;; OK, one non-happy test...
-    (let [response (util/postpersons
-                     "Turner # Tina | female | saphireBlue | 1939-11-26")]
-      (is (= (:status response) Unprocessable-Entity)))
 
     (let [response (util/rqget "/records/count")]
       (is (= (:status response) Response-OK))

@@ -1,8 +1,9 @@
 (ns peoplesort.base
   (:require
-    [clojure.data.json :as json]
     [clojure.pprint :as pp]
-    [clj-time.format :as tfm]))
+    [clj-time.core :as tm]
+    [clj-time.format :as tfm]
+    [peoplesort.sorting :as sort]))
 
 (defn pprt
   ([x] (pprt :anon x))
@@ -21,14 +22,23 @@
     :error "#####"
     (tfm/unparse (tfm/formatter "MM/dd/yyyy") dob)))
 
-(def people-props-reqd
+(def person-properties
+  "Specifications of each delimited property, in the order required."
   [{:name :LastName}
    {:name :FirstName}
-   {:name :Gender
-    :parser (fn [g]
-              (or (some #{g} ["male" "female"])
-                (throw (Exception. (str "Invalid gender: " g)))))}
+   {:name       :Gender
+    :parser     (fn [g]
+                  (or (some #{g} ["male" "female"])
+                    (throw (Exception. (str "Invalid gender: " g)))))
+    :comparator (sort/compare-unary #(= % "female"))}
    {:name :FavoriteColor}
-   {:name :DateOfBirth
-    :parser    dob-parse
-    :formatter dob-display}])
+   {:name       :DateOfBirth
+    :parser     dob-parse
+    :formatter  dob-display
+    :comparator (sort/compare-binary tm/before?)}])
+
+(def person-property
+  "A dictionary of properties keyed by name"
+  (into {}
+    (for [{:keys [name] :as prop} person-properties]
+      [name prop])))

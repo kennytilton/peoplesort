@@ -56,7 +56,7 @@
 (defn respond-data-error [reason]
   (build-response Unprocessable-Entity reason))
 
-(defmacro without-exception [try-body]
+(defmacro with-exception-trap [try-body]
   `(try ~try-body
         (catch Exception e#
           (respond-server-fail e#))))

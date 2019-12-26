@@ -9,7 +9,6 @@
 (deftest test-app
   (testing "bad route"
     (let [response (app (mock/request :get "/invalid"))]
-      (prn :repo response)
       (is (= (:status response) Not-Found)))))
 
 

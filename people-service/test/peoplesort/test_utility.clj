@@ -19,8 +19,8 @@
      (mock/request :post
        ept body))))
 
-(defn postperson [raw]
-  (rqpost "/records" {:raw raw}))
+(defn postperson [person]
+  (rqpost "/records" {:person person}))
 
 (defn postpersons [& persons]
   (rqpost "/records/bulk" {:persons persons}))

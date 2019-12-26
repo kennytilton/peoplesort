@@ -1,12 +1,5 @@
 (ns peoplecli.core
   (:require [clojure.tools.cli :refer [parse-opts]]
-            [clojure.java.io :as io]
-            [taoensso.timbre :as log]
-            [clojure.string :as str]
-            [clojure.pprint :as pp]
-            [clj-time.core :as tm]
-            [clj-time.format :as tfm]
-            [clj-time.coerce :as tc]
             [peoplecli.ingester :as ing]
             [peoplecli.reporter :as rpt])
   (:gen-class))
@@ -14,21 +7,13 @@
 (def people-cli
   [["-h" "--help"]])
 
-#_ (-main "-h")
+#_(-main "-h")
 
 #_(-main "resources/commas.csv"
     "resources/pipes.csv"
-    "resources/spaces.csv"
-    )
+    "resources/spaces.csv")
 
 (defn -main [& args]
-  #_;; uncomment during development so errors get through when async in play
-      (Thread/setDefaultUncaughtExceptionHandler
-        (reify Thread$UncaughtExceptionHandler
-          (uncaughtException [_ thread ex]
-            (log/error {:what      :uncaught-exception
-                        :exception ex
-                        :where     (str "Uncaught exception on" (.getName thread))}))))
   (let [input (parse-opts args people-cli)
         {:keys [options arguments summary errors]} input
         {:keys [help]} options
@@ -41,15 +26,11 @@
              "Options:\n" (subs summary 1)
              "\n")
 
-      (empty? filepaths) (println "\nNo data files provideed. Exiting.\n\n")
+      (empty? filepaths) (println "\nNo data files provided. Exiting.\n\n")
 
       (not-every? ing/file-found? filepaths) (do)
 
       :default
-      (ing/process-inputs
+      (ing/ingest-files-and-report
         filepaths
-        rpt/people-report
-        #_ (fn [_ data] (pp/pprint data)))
-
-      ;; WARNING: comment this out for use with REPL
-      #_(shutdown-agents))))
+        rpt/people-report))))

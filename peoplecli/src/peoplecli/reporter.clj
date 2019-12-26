@@ -4,19 +4,29 @@
             [clojure.pprint :as pp]
             [clojure.string :as str]))
 
-;;;; --- Sort comparators for pre-defined reports
+;;;; --- Sort comparators for pre-defined reports -----------------------
+;;
+;; Each data row at this point has been normalized to:
+;;
+;;   DateOfBirth FirstName LastName Gender FavoriteColor
+;;
+;; ...so hard-coded destructuring relies on that.
+;;
 ;; --- Last descending, case insensitively ----
+
 (defn comp-last-dsc
   [[l1 _ _ _ _] [l2 _ _ _ _]]
   (compare (str/lower-case l2) (str/lower-case l1)))
 
-;; --- Gender/Last -----------------------
+;; --- Gender, females first, then Last ascending -----------------------
+
 (defn gender? [g]
   (some #{g} ["male" "female"]))
 
 (defn comp-females-first-then-last-asc
   "a compare function sorting females first then by
-   ascending last name, case-insensitively"
+   ascending last name, case-insensitively. Sort invalid
+   genders to end."
   [[l1 _ _ g1 _] [l2 _ _ g2 _]]
   (if (gender? g1)
     (if (gender? g2)
@@ -35,11 +45,12 @@
       true)))
 
 ;; --- DOB ascending ------------------------
+
 (defn date-time? [x]
   (instance? org.joda.time.DateTime x))
 
 (defn comp-dob-asc
-  "Comparator for ascending dates, dropping invalid dates to bottom"
+  "Comparator for ascending dates, dropping invalid dates to bottom."
   [[_ _ dob1 _ _] [_ _ dob2 _ _]]
   (if (date-time? dob1)
     (if (date-time? dob2)
@@ -49,7 +60,7 @@
       false
       true)))
 
-;; --- the report ---------------------------
+;; --- top-level report functions ---------------------------
 
 (defn people-report-header
   "Output title and column headers"
@@ -58,7 +69,7 @@
   (pp/cl-format true
     "~&~%~%~a~%------------------------~%" title)
 
-  (pp/cl-format true "~&~%")
+  (pp/cl-format true "~&")
   (doseq [spec col-specs]
     (pp/cl-format true
       (:format-field spec)
@@ -70,10 +81,14 @@
       (:format-field spec)
       (apply str (repeat (count (:label spec)) "-")))))
 
-(defn people-report [col-specs people-data]
+(defn people-report
+  "The main reporting function, generating three versions with
+  three different sorts, otherwise identical."
+  [col-specs people-data]
+
   (doseq [[title comparator]
           [["By Gender and Last Name" comp-females-first-then-last-asc]
-           ["By DOB" comp-dob-asc]
+           ["By Date of Birth" comp-dob-asc]
            ["By Descending Last Name" comp-last-dsc]]]
     (people-report-header title col-specs)
     ;;

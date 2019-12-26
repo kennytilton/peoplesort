@@ -1,4 +1,4 @@
-last | first | gender | color | dob | sport
+LastName | FirstName | Gender | FavoriteColor | DateOfBirth | Sport
 Smith | Bob | male | green | 2001-05-03 | tennis
 diGregario | Angelina | female | red | 2010-10-8 | hockey
 BeebleBrox | Zaphod | male | gold | 2098-1-19 | astroball
