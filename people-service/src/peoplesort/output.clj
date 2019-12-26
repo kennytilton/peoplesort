@@ -3,17 +3,19 @@
             [peoplesort.persistence :as ps]
             [peoplesort.http :as http :refer :all]
             [peoplesort.sorting :refer :all]
-            [peoplesort.base :refer [person-properties person-property]]))
+            [peoplesort.properties :as props]))
 
 (defn external-format
-  "Return a record still as a map but with internal values
-   such as dates converted back to external format."
+  "Return a record still as a map but with internal values such as dates
+   converted back to external format."
   [record]
   (into {}
     (map (fn [spec]
            [(:name spec)
-            ((or (:formatter spec) identity) (get record (:name spec)))])
-      person-properties)))
+            (props/hashes-iff-error
+              (get record (:name spec))
+              (:formatter spec))])
+      props/person-properties)))
 
 (defn people-count [req]
   (with-exception-trap
@@ -28,22 +30,27 @@
      ;; during dev one commonly gets the key name wrong if only by typo
      (assert (contains? a prop-name))
      (assert (contains? b prop-name))
-     (let [av (prop-name a)
-           bv (prop-name b)]
+     (let [[a b] (map prop-name [a b])]
        ;; implement asc/dsc option by flipping operands for dsc
        (let [[a b] (case sort-order
-                     :asc [av bv]
-                     :dsc [bv av]
-                     (throw (Exception. (str "Invalid order: " sort-order))))
-             comparator (or ((comp :comparator prop-name) person-property)
+                     :asc [a b]
+                     :dsc [b a]
+                     (throw (Exception. (str "compare-property> Invalid sort order: " sort-order))))
+             comparator (or ((comp :comparator prop-name) props/person-property)
                           compare)]
          (comparator a b))))))
 
-(defn order-by [rows & order-specs]
+(defn order-by
+  [rows & order-specs]
+  "Simulates SQL 'order by', allowing any number of properties/directions"
   (apply nested-sort rows
     (map #(apply compare-property %) order-specs)))
 
-(defn stored-persons [& order-specs]
+
+(defn stored-persons
+  [& order-specs]
+  "Workhorse function that produces this service's output, sorted and
+  formatted as required by property specs and requested sort(s)."
   (with-exception-trap
     (respond-ok
       (map external-format
@@ -67,4 +74,11 @@
   (stored-persons [:LastName :asc] [:FirstName :asc]))
 
 (defn stored-persons-by-gender [req]
+  ;; The Step 1 exercise sorts female before male, as does this
+  ;; exercise's comparator. This exercise did not specify ordering, so
+  ;; we continue with female first, which in SQL-ese makes this
+  ;; an ascending sort, which does not make sense for sort by gender.
+  ;; Todo refactor so sort direction is not just asc or dsc, perhaps
+  ;; by having a neutral option that implements as "whatever the comparator
+  ;; says, treated as :asc".
   (stored-persons [:Gender :asc]))

@@ -2,7 +2,7 @@
   (:require
     [clojure.test :refer :all]
     [peoplesort.sorting :refer :all]
-    [peoplesort.base :refer :all]
+    [peoplesort.properties :refer :all]
     [peoplesort.http :refer :all]
     [peoplesort.test-utility :as util]
     [clojure.data.json :as json]
@@ -22,8 +22,7 @@
 (defn initialize-to-standard-crew
   "Clear datastore then load with fixed test data"
   []
-  (let [response (util/rqpost "/records/reset")]
-    (is (= (:status response) Response-OK)))
+  (util/rqreset!)
   (doseq [person ["Smith | Bob | male | green | 2011-08-23"
                   "BeebleBrox Zaphodra female gold 2098-1-19"
                   ;; n.b. next two dates will sort in wrong order as strings

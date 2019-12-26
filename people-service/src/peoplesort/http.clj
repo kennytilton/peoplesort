@@ -1,8 +1,9 @@
+;;;
+;;; low-level utilities for handling network requests
+;;;
 (ns peoplesort.http
   (:require
-    [clojure.data.json :as json]
-    [clojure.pprint :as pp]
-    [clj-time.format :as tfm]))
+    [clojure.data.json :as json]))
 
 (def unsecure-site-defaults
   {:params    {:urlencoded true
@@ -23,8 +24,8 @@
                :default-charset        "utf-8"}})
 
 (def Response-OK 200)
-(def Unprocessable-Entity 422)
 (def Not-Found 404)
+(def Unprocessable-Entity 422)
 
 (defn response-body->map [response]
   (when response
@@ -42,8 +43,8 @@
 (defn usage-error
   ([status reason]
    (usage-error status reason nil))
-  ([status reason x-info]
-   (build-response status (merge x-info
+  ([status reason more-info]
+   (build-response status (merge more-info
                             {:reason reason}))))
 
 (defn respond-ok [x-info]
@@ -54,9 +55,10 @@
   (build-response 500 "Server error."))
 
 (defn respond-data-error [reason]
-  (build-response Unprocessable-Entity reason))
+  (build-response Unprocessable-Entity
+    {:reason reason}))
 
-(defmacro with-exception-trap [try-body]
-  `(try ~try-body
+(defmacro with-exception-trap [& try-body]
+  `(try (do ~@try-body)
         (catch Exception e#
           (respond-server-fail e#))))

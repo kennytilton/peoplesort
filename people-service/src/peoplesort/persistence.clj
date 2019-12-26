@@ -1,5 +1,4 @@
-(ns peoplesort.persistence
-  (:require [peoplesort.sorting :refer :all]))
+(ns peoplesort.persistence)
 
 (def people-datastore
   "Persistence for duration of server run, anyway."

@@ -7,7 +7,6 @@
   finds the two operands different."
   [& sorts]
   (fn [a b]
-    ;;(prn :ab a b)
     (loop [[s & more-sorts] sorts]
       (cond
         (nil? s) 0

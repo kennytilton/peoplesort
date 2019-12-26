@@ -18,19 +18,25 @@
   (context "/records" []
     (POST "/" req
       (upl/person-add-one req))
-    ;; adds an array of persons:
+
+    ;; --- some extra endpoints that seem handy. ----
+    ;; first adds multiple persons in one shot:
     (POST "/bulk" req
-      (upl/person-add-bulk req))
+      (upl/persons-add-bulk req))
     ;; returns count of persons stored:
     (GET "/count" req
       (out/people-count req))
     ;; clears datastore:
     (POST "/reset" req
       (upl/people-reset! req))
-    ;; returns all persons sorted as requested:
+    ;; Next returns all persons sorted as specify by an order-by DSL.
+    ;; This because, looking at different sorts specified in the
+    ;; exercise, it struck me we do not want to be forever creating
+    ;; new endpoints to handle new property/direction permutations:
     (GET "/orderedby" req
       (out/stored-persons-ordered-by req))
-    ;; returns all persons according to hardcoded sorts...
+
+    ;; next three return all persons according to hardcoded sorts...
     (GET "/gender" req
       (out/stored-persons-by-gender req))
     (GET "/name" req

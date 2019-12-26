@@ -1,9 +1,6 @@
 (ns peoplesort.upload
-  (:require [clojure.set :as set]
-            [clojure.string :as str]
-            [clojure.data.json :as json]
-    ;;[ring.util.response :refer [response]]
-            [peoplesort.base :refer :all]
+  (:require [clojure.string :as str]
+            [peoplesort.properties :refer :all]
             [peoplesort.http :as http]
             [peoplesort.persistence :as ps]))
 
@@ -11,12 +8,8 @@
 
 (defn person-csv-parse
   "Try each supported delimiter looking for one that splits the input row
-  into the right number of properties which, after trimming, pass the
-  parsing if any specified for each property.
-
-  Interestingly, it is hard to provide detailed errors because a given string
-  might split to the right count on an unintended delimiter, and then exceptions
-  will arise left and right. Think C++ failed compile."
+  into the right number of properties which, after trimming, pass
+  any parsing function specified for said property."
   [input-row]
   (letfn [(try-delim [col-delim]
             (try
@@ -36,13 +29,14 @@
       {:success false
        :reason  (str "Error parsing: " input-row)})))
 
+;;; --- the endpoint implementations --------------------------
+
 (defn people-reset!
   [req]
   (http/with-exception-trap
-    (do
-      (ps/store-reset!)
-      ;; return honest count instead of assuming it is zero
-      (http/respond-ok {:new-count (ps/record-count)}))))
+    (ps/store-reset!)
+    ;; return honest count instead of assuming it is zero
+    (http/respond-ok {:new-count (ps/record-count)})))
 
 (defn person-add-one [req]
   (http/with-exception-trap
@@ -59,7 +53,7 @@
               (http/respond-ok {:new-count (ps/record-count)}))
             (http/respond-data-error (:reason parse))))))))
 
-(defn person-add-bulk [req]
+(defn persons-add-bulk [req]
   (http/with-exception-trap
     (let [{:keys [persons]} (:params req)
           parses (map person-csv-parse persons)]
@@ -67,7 +61,6 @@
         (every? :success parses)
         (do (ps/write-bulk! (map :record parses))
             (http/respond-ok {:new-count (ps/record-count)}))
-
         :default
         (http/respond-data-error (str/join "\n"
                                    (map :reason (remove :success parses))))))))
