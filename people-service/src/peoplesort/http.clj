@@ -35,10 +35,10 @@
                    "Access-Control-Allow-Headers" "Content-Type"
                    "Access-Control-Allow-Origin"  "*"})
 
-(defn build-response [status body-ext]
+(defn build-response [status body]
   {:status  status
    :headers CORS-HEADERS
-   :body    body-ext})
+   :body    body})
 
 (defn usage-error
   ([status reason]
@@ -47,8 +47,9 @@
    (build-response status (merge more-info
                             {:reason reason}))))
 
-(defn respond-ok [x-info]
-  (build-response 200 x-info))
+(defn respond-ok [body]
+  (println :ok-reponse body)
+  (build-response 200 body))
 
 (defn respond-server-fail [e]
   ;; todo: build reason from exception
