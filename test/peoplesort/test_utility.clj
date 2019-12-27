@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [ring.mock.request :as mock]
             [peoplesort.http :refer :all]
-            [peoplesort.handler :refer [app]]))
+            [peoplesort.core :refer [app]]))
 
 (defn rqget
   ([ept]

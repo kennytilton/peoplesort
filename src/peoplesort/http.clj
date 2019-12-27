@@ -48,7 +48,6 @@
                             {:reason reason}))))
 
 (defn respond-ok [body]
-  (println :ok-reponse body)
   (build-response 200 body))
 
 (defn respond-server-fail [e]

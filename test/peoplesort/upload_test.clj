@@ -1,6 +1,6 @@
 (ns peoplesort.upload-test
   (:require [clojure.test :refer :all]
-            [peoplesort.handler :refer [app]]
+            [peoplesort.core :refer [app]]
             [peoplesort.properties :refer :all]
             [peoplesort.http :refer :all]
             [peoplesort.test-utility :refer :all]

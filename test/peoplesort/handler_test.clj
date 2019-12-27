@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [clojure.pprint :as pp]
             [ring.mock.request :as mock]
-            [peoplesort.handler :refer :all]
+            [peoplesort.core :refer :all]
             [peoplesort.http :refer :all]))
 
 (deftest test-app
