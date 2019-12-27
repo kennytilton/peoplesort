@@ -8,7 +8,7 @@
     [ring.middleware.json :refer [wrap-json-response]]
     [peoplesort.upload :as upl]
     [peoplesort.output :as out]
-    [clojure.tools.cli :as cli]
+    [clojure.tools.cli :refer [parse-opts]]
     [peoplesort.http :as http]
     [peoplesort.cla.ingester :as ing]
     [peoplesort.cla.reporter :as rpt])
@@ -28,10 +28,11 @@
     (POST "/bulk" [] upl/persons-add-bulk)
     (GET "/count" [] out/people-count)
     (POST "/reset" [] upl/people-reset!)
-    ;; Next returns all persons sorted as specify by an order-by DSL.
+    ;; Next returns all persons sorted as specified by an order-by DSL
+    ;; inspired by SQL.
     ;; This because, looking at different sorts specified in the
     ;; exercise, it struck me we do not want to be forever creating
-    ;; new endpoints to handle new property/direction permutations:
+    ;; new endpoints to handle new property/direction permutations.
     (GET "/orderedby" [] out/stored-persons-ordered-by)
 
     ;; next three return all persons according to hardcoded sorts...
@@ -47,12 +48,8 @@
 (def people-cli
   [["-h" "--help"]])
 
-#_(-main "-h")
-
-#_(-main "resources/pipes.csv" "resources/commas.csv" "resources/spaces.csv")
-
 (defn -main [& args]
-  (let [input (cli/parse-opts args people-cli)
+  (let [input (parse-opts args people-cli)
         {:keys [options arguments summary errors]} input
         {:keys [help]} options
         filepaths arguments
@@ -62,7 +59,8 @@
                (println e))
 
       help (println "\nUsage:\n    peoplesort options* files*\n\n"
-             "If files are provided, parse, merge, report to console, and exit.\n\n"
+             "If help is requested, we print this to console and exit.\n\n"
+             "If files are provided, we parse, merge, report to console, and exit.\n\n"
              "If no files are provided, a service will be started on PORT or 3000.\n\n"
              "Options:\n" (subs summary 1)
              "\n")

@@ -15,7 +15,7 @@
 
 (defn file-found? [path]
   (or (.exists (io/as-file path))
-    (do (println (format "\nSuggested file <%s> not found.\n" path))
+    (do (println (format "\nInput file <%s> not found.\n" path))
         false)))
 
 ;; --- input file header parsing -------------------------------------------
@@ -54,13 +54,15 @@
   for downstream processing."
   [col-specs filepath]
   (with-open [rdr (io/reader filepath)]
-    (when-let [header-def (header-parse props/SUPPORTED-DELIMS col-specs (first (line-seq rdr)))]
-      (merge header-def {:filepath   filepath
-                         :col-specs col-specs}))))
+    (let [header (first (line-seq rdr))]
+      (if-let [header-def (header-parse props/SUPPORTED-DELIMS col-specs header)]
+        (merge header-def {:filepath  filepath
+                           :col-specs col-specs})
+        {:error    (str "Invalid header: " header)
+         :filepath filepath}))))
 
-#_
-    (people-file-ingest
-      (people-input-analyze props/person-properties "resources/pipes.csv"))
+#_(people-file-ingest
+    (people-input-analyze props/person-properties "resources/pipes.csv"))
 
 (def PEOPLE-COL-ORDER
   "Input files can vary column order, but we want the ingested
@@ -101,15 +103,26 @@
    (ingest-files-and-report input-files nil))
 
   ([input-files reporter]
-   (let [input-specs (map #(people-input-analyze props/person-properties %) input-files)]
-     (when-not (some nil? input-specs)
-       (let [parsed-rows (distinct
-                           ;; ^^^ seems right behavior to de-dupe
-                           (mapcat people-file-ingest input-specs))]
-         (when reporter
-           ;; parsed rows have values ordered as required, now
-           ;; pull each col spec into a vector in the same order
-           ;; and feed reporter data in efficient form
-           (reporter
-             (map #(% props/person-property-dictionary) PEOPLE-COL-ORDER)
-             parsed-rows)))))))
+   (let [input-specs (map #(people-input-analyze props/person-properties %) input-files)
+         errors (filter :error input-specs)]
+     (cond
+       (seq errors)
+       (doseq [{:keys [error filepath]} errors]
+         (println error "\n while processing file: " filepath))
+
+       :default
+       (when-not (some nil? input-specs)
+         (try
+           (let [parsed-rows (distinct
+                               ;; ^^^ seems right behavior to de-dupe
+                               (mapcat people-file-ingest input-specs))]
+             (when reporter
+               ;; parsed rows have values ordered as required, now
+               ;; pull each col spec into a vector in the same order
+               ;; and feed reporter data in efficient form
+               (reporter
+                 (map #(% props/person-property-dictionary) PEOPLE-COL-ORDER)
+                 parsed-rows)))
+           (catch Exception e
+             (let [{:keys [cause data via trace]} (Throwable->map e)]
+               (println "Error: " cause)))))))))

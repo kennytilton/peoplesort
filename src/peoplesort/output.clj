@@ -5,9 +5,10 @@
             [peoplesort.sorting :refer :all]
             [peoplesort.properties :as props]))
 
-(defn external-format
+(defn format-for-display
   "Return a record still as a map but with internal values such as dates
-   converted back to external format."
+   converted back to external format, and hashes substituted for
+   parse failures."
   [record]
   (into {}
     (map (fn [spec]
@@ -17,19 +18,17 @@
               (:formatter spec))])
       props/person-properties)))
 
-(defn people-count [req]
-  (with-exception-trap
-    (respond-ok {:count (ps/record-count)})))
-
 (defn compare-property
+  "Create a comparator by working off the property name
+  and an optional asc/dsc direction, pulling an optional
+  value comparator from the standard property definition
+  to produce a function for eventual use by sort."
   ([prop-name] (compare-property prop-name :asc))
   ([prop-name sort-order]
    (fn [a b]
-     ;; todo lose next two airbags
-     ;; these slow things down and make the utility less flexible, but
-     ;; during dev one commonly gets the key name wrong if only by typo
-     (assert (contains? a prop-name))
-     (assert (contains? b prop-name))
+     ;; enable next two assertions during development
+     ;(assert (contains? a prop-name))
+     ;(assert (contains? b prop-name))
      (let [[a b] (map prop-name [a b])]
        ;; implement asc/dsc option by flipping operands for dsc
        (let [[a b] (case sort-order
@@ -46,6 +45,11 @@
   (apply nested-sort rows
     (map #(apply compare-property %) order-specs)))
 
+;;; --- actual handlers for endpoints ------------------------------------
+
+(defn people-count [req]
+  (with-exception-trap
+    (respond-ok {:count (ps/record-count)})))
 
 (defn stored-persons
   [& order-specs]
@@ -53,13 +57,14 @@
   formatted as required by property specs and requested sort(s)."
   (with-exception-trap
     (respond-ok
-      (map external-format
+      (map format-for-display
         (apply order-by (ps/contents) order-specs)))))
 
 (defn stored-persons-ordered-by
   "A generic endpoint allowing arbitrary and nested ordering
   to be specified in the request. Goal is to avoid forever hard-coding
   endpoints for combinations of properties and orderings."
+  ;; Todo add some validation of the sort specs
   [req]
   (with-exception-trap
     (apply stored-persons

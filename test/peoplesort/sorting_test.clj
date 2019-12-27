@@ -26,6 +26,7 @@
   (doseq [person ["Smith | Bob | male | green | 2011-08-23"
                   "BeebleBrox Zaphodra female gold 2098-1-19"
                   ;; n.b. next two dates will sort in wrong order as strings
+                  ;; so this tells us if we handle dates as dates
                   "Lama, Dalai, male, saffron, 1939-9-6"
                   "Turner | Tina | female | saphireBlue | 1939-11-26"
                   "Turner Bachman male various 1973-06-30"

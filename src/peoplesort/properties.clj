@@ -37,9 +37,8 @@
 (def SUPPORTED-DELIMS [#"\|" #"," #" "])
 
 (def person-properties
-  "Specifications of each delimited property, in the order required."
+  "Specifications of each delimited property, in the report output order."
   [{:name     :LastName
-    :required true
     :label "Surname"
     :format-field "~20a"}
    {:name :FirstName
@@ -63,7 +62,7 @@
     :formatter  dob-display}])
 
 (def person-property-dictionary
-  "A dictionary of properties keyed by name"
+  "A dictionary of the above properties keyed by name"
   (into {}
     (for [{:keys [name] :as prop} person-properties]
       [name prop])))
