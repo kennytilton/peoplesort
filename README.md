@@ -58,7 +58,21 @@ Regression tests:
 Ad hoc tests: he resources directory contains a number of test files, and a subdirectory "bad" of invalid test files. These can be tested using the prebuilt binary:
 
   `./bin/peoplesort resources/pipes.csv resources/spaces.csv resources/commas.csv`
+ 
+ To start the service, just:
+ 
+  `.bin/peoplesort`
   
+ Then add some persons, eg:
+ * `curl -XPOST 'http://localhost:3000/records?person=Adams|Bob|male|red|2012-12-31'`
+ *`curl -XPOST 'http://localhost:3000/records?person=Turner|Tina|female|gold|1939-11-26'`
+   
+ And confirm:
+ * `curl -XPOST 'http://localhost:3000/records/birthdate'`
+ * `curl -XPOST 'http://localhost:3000/records/gender'`
+ * `curl -XPOST 'http://localhost:3000/records/name'`
+   
+ # Building
  After modifying the app, rebuild the binary thus:
  
    `lein bin`
