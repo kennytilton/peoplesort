@@ -47,6 +47,14 @@ Then in a second terminal:
 
 `curl -XGET 'http://localhost:3000/records/count`
 
+Even better, install `jq` to get the output pretty-printed:
+
+   `brew install jq`
+   
+   ...and:
+   
+   `curl -XGET 'http://localhost:3000/records/count | jq`
+
 # Assumptions
 Some assumptions are explicit in the above CLA help, including that any number of files may be provided.
 
