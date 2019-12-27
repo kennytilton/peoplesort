@@ -42,9 +42,12 @@
 
   (route/not-found "Invalid route requested."))
 
+(def web-service-site-defaults
+  (assoc-in site-defaults [:security :anti-forgery] false))
+
 (def app
   (wrap-json-response
-    (wrap-defaults app-routes http/unsecure-site-defaults)))
+    (wrap-defaults app-routes web-service-site-defaults)))
 
 (def people-cli
   [["-h" "--help"]])
@@ -74,17 +77,10 @@
       ; Start the service
       (do
         (server/run-server
-          (wrap-json-response
-            (wrap-defaults #'app-routes
-              (assoc-in site-defaults [:security :anti-forgery] false)))
-          {:port port})
+            (wrap-json-response
+              (wrap-defaults #'app-routes web-service-site-defaults))
+            {:port port})
         (println (str "Running webserver at http:/127.0.0.1:" port "/")))
-      #_(server/run-server
-          (wrap-json-response
-            (wrap-defaults #'app-routes http/unsecure-site-defaults) {:port port})
-          ; Run the server without ring defaults
-          ;(server/run-server #'app-routes {:port port})
-          (println (str "Running webserver at http:/127.0.0.1:" port "/")))
 
       (not-every? ing/file-found? filepaths)
       (do)
