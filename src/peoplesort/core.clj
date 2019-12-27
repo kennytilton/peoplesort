@@ -61,6 +61,10 @@
       help (println "\nUsage:\n    peoplesort options* files*\n\n"
              "If help is requested, we print this to console and exit.\n\n"
              "If files are provided, we parse, merge, report to console, and exit.\n\n"
+             "Files must have, in any order, an initial row with these colun headers:\n\n"
+             "  LastName | FirstName | Gender | FavoriteColor | DateOfBirth\n\n"
+             "Columns may be delimited with pipes, as shown, or commas or spaces. The data\n"
+             "may not include delimiters.\n\n"
              "If no files are provided, a service will be started on PORT or 3000.\n\n"
              "Options:\n" (subs summary 1)
              "\n")
