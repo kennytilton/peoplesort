@@ -14,8 +14,8 @@
    :session   {:flash        true
                :cookie-attrs {:http-only true}}
    :security  {:anti-forgery         false                  ;; true
-               :xss-protection       nil                    ;; {:enable? true, :mode :block}
-               :frame-options        nil                    ;;:sameorigin
+               :xss-protection       {:enable? true, :mode :block} ;; nil                    ;; {:enable? true, :mode :block}
+               :frame-options        :sameorigin ;; nil                    ;;:sameorigin
                :content-type-options :nosniff}
    :static    {:resources "public"}
    :responses {:not-modified-responses true

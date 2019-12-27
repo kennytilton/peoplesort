@@ -4,7 +4,7 @@
     [compojure.core :refer :all]
     [compojure.handler :as handler]
     [compojure.route :as route]
-    [ring.middleware.defaults :refer [wrap-defaults]]
+    [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
     [ring.middleware.json :refer [wrap-json-response]]
     [peoplesort.upload :as upl]
     [peoplesort.output :as out]
@@ -22,8 +22,6 @@
 
 (defroutes app-routes
   (context "/records" []
-    (POST "/" [] upl/person-add-one)
-
     ;; --- some extra endpoints that seem handy. ----
     (POST "/bulk" [] upl/persons-add-bulk)
     (GET "/count" [] out/people-count)
@@ -38,8 +36,11 @@
     ;; next three return all persons according to hardcoded sorts...
     (GET "/gender" [] out/stored-persons-by-gender)
     (GET "/name" [] out/stored-persons-by-name)
-    (GET "/birthdate" [] out/stored-persons-by-birthdate))
-  (route/not-found "Invalid route toplevel."))
+    (GET "/birthdate" [] out/stored-persons-by-birthdate)
+
+    (POST "/" [] upl/person-add-one))
+
+  (route/not-found "Invalid route requested."))
 
 (def app
   (wrap-json-response
@@ -71,12 +72,19 @@
 
       (empty? filepaths)
       ; Start the service
-      (server/run-server
-        (wrap-json-response
-          (wrap-defaults #'app-routes http/unsecure-site-defaults) {:port port})
-        ; Run the server without ring defaults
-        ;(server/run-server #'app-routes {:port port})
+      (do
+        (server/run-server
+          (wrap-json-response
+            (wrap-defaults #'app-routes
+              (assoc-in site-defaults [:security :anti-forgery] false)))
+          {:port port})
         (println (str "Running webserver at http:/127.0.0.1:" port "/")))
+      #_(server/run-server
+          (wrap-json-response
+            (wrap-defaults #'app-routes http/unsecure-site-defaults) {:port port})
+          ; Run the server without ring defaults
+          ;(server/run-server #'app-routes {:port port})
+          (println (str "Running webserver at http:/127.0.0.1:" port "/")))
 
       (not-every? ing/file-found? filepaths)
       (do)

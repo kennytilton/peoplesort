@@ -11,12 +11,8 @@
                  [ring/ring-json "0.4.0"]
                  [org.clojure/tools.cli "0.3.5"]]
 
-
-  ;; :plugins [[lein-ring "0.9.7"]]
-  ;; :ring {:handler peoplesort.handler/app}
-  ;:profiles
-  ;{:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
-  ;                      [ring/ring-mock "0.3.0"]]}}
+  :plugins [[lein-ring "0.9.7"]]
+  :ring {:handler peoplesort.core/app}
 
   :main ^:skip-aot peoplesort.core
   :target-path "target"
