@@ -11,12 +11,12 @@ Here is the CLA help output:
 
      If files are provided, we parse, merge, report to console, and exit.
 
-     Files must have, in any order, an initial row with these colun headers:
+     Files must have, in any order, an initial row with these column headers:
 
        LastName | FirstName | Gender | FavoriteColor | DateOfBirth
 
      Columns may be delimited with pipes, as shown, or commas or spaces. The data
-     may not include delimiters.
+     may not include delimiters. Do not use more than one space anywhere.
 
      If no files are provided, a service will be started on PORT or 3000.
 
