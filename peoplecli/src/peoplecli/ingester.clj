@@ -43,7 +43,6 @@
             :formatter    dob-display}})
 
 ;; --- input file header parsing -------------------------------------------
-(def SUPPORTED-DELIMS [#"\|" #"," #" "])
 
 (defn header-parse
   "Parse a standard CSV header where first row names the

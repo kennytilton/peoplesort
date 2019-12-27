@@ -34,23 +34,35 @@
   [dob]
   (tfm/unparse (tfm/formatter "MM/dd/yyyy") dob))
 
+(def SUPPORTED-DELIMS [#"\|" #"," #" "])
+
 (def person-properties
   "Specifications of each delimited property, in the order required."
   [{:name     :LastName
-    :required true}
-   {:name :FirstName}
+    :required true
+    :label "Surname"
+    :format-field "~20a"}
+   {:name :FirstName
+    :label "Given name"
+    :format-field "~20a"}
    {:name       :Gender
     :parser     (fn [g]
                   (or (some #{g} ["male" "female"])
                     parse-fail))
-    :comparator (sort/compare-unary #(= % "female"))}
-   {:name :FavoriteColor}
+    :comparator (sort/compare-unary #(= % "female"))
+    :label "Gender"
+    :format-field "~10a"}
+   {:name :FavoriteColor
+    :label "Favorite color"
+    :format-field "~15a"}
    {:name       :DateOfBirth
     :parser     dob-parse
     :comparator (sort/compare-binary tm/before?)
+    :label "Born"
+    :format-field "~16a"
     :formatter  dob-display}])
 
-(def person-property
+(def person-property-dictionary
   "A dictionary of properties keyed by name"
   (into {}
     (for [{:keys [name] :as prop} person-properties]

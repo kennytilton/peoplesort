@@ -1,8 +1,9 @@
 (ns peoplesort.cla.reporter
   (:require [clj-time.format :as tfm]
-    [clj-time.core :as tm]
-    [clojure.pprint :as pp]
-    [clojure.string :as str]))
+            [clj-time.core :as tm]
+            [clojure.pprint :as pp]
+            [clojure.string :as str]
+            [peoplesort.properties :as props]))
 
 ;;;; --- Sort comparators for pre-defined reports -----------------------
 ;;
@@ -10,7 +11,7 @@
 ;;
 ;;   LastName  FirstName  Gender FavoriteColor DateOfBirth
 ;;
-;; ...so hard-coded destructuring relies on that.
+;; ...and hard-coded destructuring found next relies on that.
 ;;
 
 ;; --- Last descending, case insensitively ----
@@ -91,16 +92,15 @@
            ["By Date of Birth" comp-dob-asc]
            ["By Descending Last Name" comp-last-dsc]]]
     (people-report-header title col-specs)
-    ;;
-    ;; --- the people --------------------------------
-    ;;
     (doseq [person-vals (sort comparator people-data)]
       (pp/cl-format true "~%")
       (doall (map (fn [spec val]
                     (pp/cl-format true
                       (:format-field spec)
                       (try
-                        ((or (:formatter spec) identity) val)
+                        (if (= val props/parse-fail)
+                          "#####"
+                          ((or (:formatter spec) identity) val))
                         (catch Exception e
                           "#####"))))
                col-specs person-vals)))

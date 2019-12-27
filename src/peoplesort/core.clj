@@ -8,10 +8,11 @@
     [ring.middleware.json :refer [wrap-json-response]]
     [peoplesort.upload :as upl]
     [peoplesort.output :as out]
-    [clojure.tools.cli :refer [parse-opts]]
+    [clojure.tools.cli :as cli]
     [peoplesort.http :as http]
     [peoplesort.cla.ingester :as ing]
-    [peoplesort.cla.reporter :as rpt]))
+    [peoplesort.cla.reporter :as rpt])
+  (:gen-class))
 
 ; Our spec:
 ;   POST /records - Post a single data line in any of the 3 formats supported by your existing code
@@ -46,8 +47,12 @@
 (def people-cli
   [["-h" "--help"]])
 
+#_(-main "-h")
+
+#_(-main "resources/pipes.csv" "resources/commas.csv" "resources/spaces.csv")
+
 (defn -main [& args]
-  (let [input (parse-opts args people-cli)
+  (let [input (cli/parse-opts args people-cli)
         {:keys [options arguments summary errors]} input
         {:keys [help]} options
         filepaths arguments
@@ -57,22 +62,24 @@
                (println e))
 
       help (println "\nUsage:\n    peoplesort options* files*\n\n"
+             "If files are provided, parse, merge, report to console, and exit.\n\n"
+             "If no files are provided, a service will be started on PORT or 3000.\n\n"
              "Options:\n" (subs summary 1)
              "\n")
 
       (empty? filepaths)
-      (do
-        ; Run the server with Ring.defaults middleware
-        (server/run-server
-          (wrap-json-response
-            (wrap-defaults #'app-routes http/unsecure-site-defaults) {:port port})
-          ; Run the server without ring defaults
-          ;(server/run-server #'app-routes {:port port})
-          (println (str "Running webserver at http:/127.0.0.1:" port "/")))
+      ; Start the service
+      (server/run-server
+        (wrap-json-response
+          (wrap-defaults #'app-routes http/unsecure-site-defaults) {:port port})
+        ; Run the server without ring defaults
+        ;(server/run-server #'app-routes {:port port})
+        (println (str "Running webserver at http:/127.0.0.1:" port "/")))
 
-        (not-every? ing/file-found? filepaths) (do)
+      (not-every? ing/file-found? filepaths)
+      (do)
 
-        :default
-        (ing/ingest-files-and-report
-          filepaths
-          rpt/people-report)))))
+      :default
+      (ing/ingest-files-and-report
+        filepaths
+        rpt/people-report))))

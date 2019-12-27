@@ -4,8 +4,6 @@
             [peoplesort.http :as http]
             [peoplesort.persistence :as ps]))
 
-(def SUPPORTED-DELIMS [#"\|" #"," #" "])
-
 (defn person-csv-parse
   "Try each supported delimiter looking for one that splits the input row
   into the right number of properties which, after trimming, pass

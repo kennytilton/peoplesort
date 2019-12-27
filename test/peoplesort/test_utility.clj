@@ -30,6 +30,9 @@
 (defn postpersons [& persons]
   (rqpost "/records/bulk" {:persons persons}))
 
+;; we need macros so clojure.test (or Cursive?) can figure out which
+;; source lines to highlight on failures.
+
 (defmacro is-response-ok [response-form]
   `(is (= Response-OK (:status ~response-form))))
 

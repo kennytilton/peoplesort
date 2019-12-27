@@ -36,7 +36,7 @@
                      :asc [a b]
                      :dsc [b a]
                      (throw (Exception. (str "compare-property> Invalid sort order: " sort-order))))
-             comparator (or ((comp :comparator prop-name) props/person-property)
+             comparator (or ((comp :comparator prop-name) props/person-property-dictionary)
                           compare)]
          (comparator a b))))))
 
