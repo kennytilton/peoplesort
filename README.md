@@ -23,17 +23,29 @@ Here is the CLA help output:
      Options:
       -h, --help 
 
-The service endpoints all return JSON, with POSTs returning ["count" <count]:
+The service endpoints all return JSON, with POSTs returning ["count" \<count\>]:
 
-POST /records?person=<col data> - Post a single data line in any of the 3 formats supported
-POST /records/bulk?persons=[<col-data>...] - Post array of data lines in any of the 3 formats supported
-POST /records/reset - Clear all records posted. (No records are stored between server launches.)
-GET /records/gender - returns records sorted by gender
-GET /records/birthdate - returns records sorted by birthdate
-GET /records/name - returns records sorted by name
-GET /records/orderedby?sortkeys=[sort-spec*] - returns records sorted as specified. Sample sort-spec:
+* `POST /records?person=<col data>` - Post a single data line in any of the 3 formats supported
+* `POST /records/bulk?persons=[<col-data>...]` - Post array of data lines in any of the 3 formats supported
+* `POST /records/reset` - Clear all records posted. (No records are stored between server launches.)
+* `GET /records/gender` - returns records sorted by gender
+* `GET /records/birthdate` - returns records sorted by birthdate
+* `GET /records/name` - returns records sorted by name
+* `GET /records/orderedby?sortkeys=[sort-spec*]` - returns records sorted as specified. Sample sort-spec:
      [["Gender", "asc"],["LastName","dsc"],["FirstName\","asc"]]
-GET /records/count - returns {:count <count>}
+* `GET /records/count` - returns ["count" \<count\>
+
+The service looks for the environment variable PORT, defaulting to 3000. It can be started from source:
+
+`lein ring server` or `lein ring server-headless`
+
+...or using the binary:
+
+`./bin/peoplesort`
+
+Then in a second terminal:
+
+`curl -XGET 'http://localhost:3000/records/count`
 
 # Assumptions
 Some assumptions are explicit in the above CLA help, including that any number of files may be provided.
