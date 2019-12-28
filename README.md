@@ -89,11 +89,12 @@ Ad hoc tests: he resources directory contains a number of test files, and a subd
  Here we offer random notes on the project that might benefit others as daft as I.
  ## Stumpers
  One killer was the dread "Invalid anti-forgery token" error. The fix? Steal code more carefully. Most Ring examples have something like:
-    `(def app (wrap-json-response (wrap-defaults app-routes site-defaults)))`
+*    `(def app (wrap-json-response (wrap-defaults app-routes site-defaults)))`
 
 ...but we are developing a service, and `site-defaults` are perfect. For web sites. For a service we want:
-    `(def app (wrap-json-response (wrap-defaults app-routes api-defaults)))`
+*    `(def app (wrap-json-response (wrap-defaults app-routes api-defaults)))`
     
  ## Suggested enhancements
  * Offer a combined execution in which input files are loaded and then served.
  * More detailed parsing errors.
+ * Look at the  SQL "order by". How hard would a "where" clause be?
