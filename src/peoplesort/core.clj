@@ -4,12 +4,11 @@
     [compojure.core :refer :all]
     [compojure.handler :as handler]
     [compojure.route :as route]
-    [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
+    [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
     [ring.middleware.json :refer [wrap-json-response]]
     [peoplesort.upload :as upl]
     [peoplesort.output :as out]
     [clojure.tools.cli :refer [parse-opts]]
-    [peoplesort.http :as http]
     [peoplesort.cla.ingester :as ing]
     [peoplesort.cla.reporter :as rpt])
   (:gen-class))
@@ -42,12 +41,9 @@
 
   (route/not-found "Invalid route requested."))
 
-(def web-service-site-defaults
-  (assoc-in site-defaults [:security :anti-forgery] false))
-
 (def app
   (wrap-json-response
-    (wrap-defaults app-routes web-service-site-defaults)))
+    (wrap-defaults app-routes api-defaults)))
 
 (def people-cli
   [["-h" "--help"]])
@@ -78,7 +74,7 @@
       (do
         (server/run-server
             (wrap-json-response
-              (wrap-defaults #'app-routes web-service-site-defaults))
+              (wrap-defaults #'app-routes api-defaults))
             {:port port})
         (println (str "Running webserver at http:/127.0.0.1:" port "/")))
 

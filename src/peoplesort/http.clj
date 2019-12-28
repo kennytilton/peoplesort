@@ -22,24 +22,6 @@
    :headers CORS-HEADERS
    :body    body})
 
-(def unsecure-site-defaults
-  {:params    {:urlencoded true
-               :multipart  true
-               :nested     true
-               :keywordize true}
-   :cookies   true
-   :session   {:flash        true
-               :cookie-attrs {:http-only true}}
-   :security  {:anti-forgery         false                  ;; true
-               :xss-protection       nil                    ;; {:enable? true, :mode :block}
-               :frame-options        nil                    ;;:sameorigin
-               :content-type-options :nosniff}
-   :static    {:resources "public"}
-   :responses {:not-modified-responses true
-               :absolute-redirects     true
-               :content-types          true
-               :default-charset        "utf-8"}})
-
 (defn usage-error
   ([status reason]
    (usage-error status reason nil))
