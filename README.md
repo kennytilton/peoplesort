@@ -85,16 +85,25 @@ Ad hoc tests: he resources directory contains a number of test files, and a subd
  
    `lein bin`
  
- # Fun Stuff
+ ## Fun Stuff
  Here we offer random notes on the project that might benefit others as daft as I.
- ## Stumpers
+ ### Stumpers
+ #### Anti-forgery!!
  One killer was the dread "Invalid anti-forgery token" error. The fix? Steal code more carefully. Most Ring examples have something like:
 *    `(def app (wrap-json-response (wrap-defaults app-routes site-defaults)))`
 
 ...but we are developing a service, and `site-defaults` are perfect. For web sites. For a service we want:
 *    `(def app (wrap-json-response (wrap-defaults app-routes api-defaults)))`
+#### Comparators
+Sort predicates are trickier than we might think. The classic "comparator" returns -1 if the first operand is indisputably less than the second, +1 if it is the other way around, and 0 if neither.
+
+That might sound simple for things like arithmetic > or <, but sometimes we want to order semantically richer and even ambiguous elements. If we are inconsistent, aka if we indicate "less than" so loosely that A is less than B *and* B is less than A, sorting will be unpredictable. Been there, done that.
     
- ## Suggested enhancements
- * Offer a combined execution in which input files are loaded and then served.
+ ### Suggested enhancements
+ * Offer a combined execution in which input files are loaded, optionally reported, then served in "service mode".
  * More detailed parsing errors.
  * Look at the  SQL "order by". How hard would a "where" clause be?
+ * Once we have a "where" clause, how about implementing -XDELETE?
+ * This one should be easy for a Clojurist: Undo?
+ * What if we had to process 20,000 persons? Would the flexibility tolerating different column orders be a performance killer? If so, how would we cure?
+ * Spit? Slurp? Can you say "persistence"? Sher ya can!
